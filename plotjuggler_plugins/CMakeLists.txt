@@ -7,6 +7,7 @@ add_subdirectory( DataStreamSample )
 add_subdirectory( DataStreamWebsocket )
 add_subdirectory( DataStreamUDP )
 add_subdirectory( DataStreamMQTT )
+add_subdirectory( DataStreamOPCUA )
 add_subdirectory( DataStreamZMQ )
 
 add_subdirectory( StatePublisherCSV )
