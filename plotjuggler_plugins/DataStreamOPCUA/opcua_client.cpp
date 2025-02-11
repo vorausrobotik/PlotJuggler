@@ -18,12 +18,17 @@ OPCUAClient::OPCUAClient(const std::string& address)
   }
 }
 
-OPCUAClient::OPCUAClient(const std::string& address, const jsoncons::json& clientData) : OPCUAClient(address)
+OPCUAClient::OPCUAClient(const std::string& address, const nlohmann::json& clientData) : OPCUAClient(address)
 {
   // Validate json body keys
   JsonValidator::expectKeys(clientData, { "variables" });
 
-  for (const auto& variableData : clientData.at("variables").array_range())
+  if (!clientData["variables"].is_array())
+  {
+    throw JSONException("Expected 'variables' to be an array.");
+  }
+
+  for (const auto& variableData : clientData["variables"])
   {
     this->addVariable(variableData);
   }
@@ -61,7 +66,7 @@ void OPCUAClient::disconnect()
   this->client_ = nullptr;
 }
 
-void OPCUAClient::addVariable(const jsoncons::json& variableData)
+void OPCUAClient::addVariable(const nlohmann::json& variableData)
 {
   // Validate json body keys
   JsonValidator::expectKeys(variableData, { "name", "namespaceID", "nodeID" });
@@ -197,18 +202,17 @@ void OPCUAClient::addVariablesToTable(QTableWidget& tableWidget)
   }
 }
 
-jsoncons::json OPCUAClient::toJSON()
+nlohmann::json OPCUAClient::toJSON()
 {
-  auto variables = jsoncons::json(jsoncons::json_array_arg);
+  nlohmann::json variables = nlohmann::json::array();
 
   for (const auto& variable : this->variables_)
   {
     variables.push_back(variable->toJSON());
   }
 
-  auto rep = jsoncons::json(jsoncons::json_object_arg);
-  rep.insert_or_assign(this->getAddress(), jsoncons::json_object_arg);
-  rep.at(this->getAddress()).insert_or_assign("variables", variables);
+  nlohmann::json rep;
+  rep[this->getAddress()] = {{"variables", variables}};
   return rep;
 }
 

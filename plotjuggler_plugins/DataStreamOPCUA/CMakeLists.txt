@@ -1,17 +1,15 @@
 if(BUILDING_WITH_VCPKG)
-    message(STATUS "DataStreamOPCUA: Finding [open62541] and [jsoncons] with vcpkg")
+    message(STATUS "DataStreamOPCUA: Finding [open62541] with vcpkg")
 elseif(BUILDING_WITH_CONAN)
-    message(STATUS "DataStreamOPCUA: Finding [open62541] and [jsoncons] with conan")
+    message(STATUS "DataStreamOPCUA: Finding [open62541] with conan")
 else()
-    message(STATUS "DataStreamOPCUA: Finding [open62541] and [jsoncons] without package managers")
+    message(STATUS "DataStreamOPCUA: Finding [open62541] without package managers")
 endif()
 
 find_package(open62541 QUIET)
-find_package(jsoncons QUIET)
 
-if(open62541_FOUND AND jsoncons_FOUND)
-
-    message(STATUS "DataStreamOPCUA: [open62541] and [jsoncons] found.")
+if(open62541_FOUND)
+    message(STATUS "DataStreamOPCUA: [open62541] found.")
     add_definitions(${QT_DEFINITIONS})
     add_definitions(-DQT_PLUGIN)
 
@@ -24,11 +22,11 @@ if(open62541_FOUND AND jsoncons_FOUND)
         ${Qt5Xml_LIBRARIES}
         plotjuggler_base
         open62541::open62541
-        jsoncons
+        nlohmann_json
         )
 
 
     install(TARGETS DataStreamOPCUA DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("[open62541] or [jsoncons] not found. Skipping plugin DataStreamOPCUA.")
+    message("DataStreamOPCUA: [open62541] not found. Skipping plugin DataStreamOPCUA.")
 endif()

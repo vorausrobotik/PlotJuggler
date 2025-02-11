@@ -7,7 +7,7 @@
 #include <QTableWidget>
 #include <open62541/server.h>
 #include <open62541/client_highlevel.h>
-#include <jsoncons/json.hpp>
+#include <nlohmann/json.hpp>
 #include "PlotJuggler/plotdata.h"
 
 class OPCUAVariable
@@ -84,7 +84,7 @@ public:
   /**
    * JSON serializing method
    */
-  jsoncons::json toJSON() const;
+  nlohmann::json toJSON() const;
 
   /**
    * Validates this variable

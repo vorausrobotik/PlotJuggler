@@ -10,7 +10,7 @@
 #include <open62541/client_config_default.h>
 #include <open62541/client_highlevel.h>
 #include <open62541/statuscodes.h>
-#include <jsoncons/json.hpp>
+#include <nlohmann/json.hpp>
 #include <json_validator.h>
 #include "opcua_variable.h"
 
@@ -45,7 +45,7 @@ private:
 public:
   // Constructors
   explicit OPCUAClient(const std::string& address);
-  OPCUAClient(const std::string& address, const jsoncons::json& clientData);
+  OPCUAClient(const std::string& address, const nlohmann::json& clientData);
 
   // Destructor
   ~OPCUAClient();
@@ -74,7 +74,7 @@ public:
    *
    * @throw OPCUAClientException if something went wrong
    */
-  void addVariable(const jsoncons::json& variableData);
+  void addVariable(const nlohmann::json& variableData);
 
   /**
    * Removes an opcua variable from the internal list of tracked variables
@@ -127,7 +127,7 @@ public:
    */
   std::string getAddress() const;
 
-  jsoncons::json toJSON();
+  nlohmann::json toJSON();
 
   /**
    * Equals operator

@@ -21,7 +21,6 @@
 #include "iostream"
 #include "opcua_variable.h"
 #include "opcua_client.h"
-#include "jsoncons/json.hpp"
 #include <fstream>
 
 template <typename ValueType, typename EditElement>

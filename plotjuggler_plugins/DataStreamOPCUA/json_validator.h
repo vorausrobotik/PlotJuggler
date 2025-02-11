@@ -2,8 +2,8 @@
 #define PLOTJUGGLER_PLUGINS_DATASTREAMOPCUA_JSON_VALIDATOR_H
 
 #include <sstream>
-#include <jsoncons/json.hpp>
-#include <jsoncons/basic_json.hpp>
+#include <nlohmann/json.hpp>
+#include <exception>
 
 class JSONException : public std::exception
 {
@@ -31,7 +31,7 @@ private:
    * @param keyName is the key
    */
   template <typename T>
-  static void raiseTypeException(const jsoncons::json& jsonData, const std::string& keyName);
+  static void raiseTypeException(const nlohmann::json& jsonData, const std::string& keyName);
 
 public:
   /**
@@ -39,7 +39,7 @@ public:
    * @param jsonData is the json object
    * @param keyNames is the list of expected keys
    */
-  static void expectKeys(const jsoncons::json& jsonData, const std::vector<std::string>& keyNames);
+  static void expectKeys(const nlohmann::json& jsonData, const std::vector<std::string>& keyNames);
 
   /**
    * Verifies that a value in the json object is of type string and returns it if possible
@@ -49,38 +49,38 @@ public:
    *
    * @return is the parsed string
    */
-  static std::string parseString(const jsoncons::json& jsonData, const std::string& keyName);
+  static std::string parseString(const nlohmann::json& jsonData, const std::string& keyName);
 
   /**
    * Verifies that a value in the json object is of the type T and returns it if possible.
-   * @tparam T is the expected type (restrigted to integer types, e.g. uint32_t, ...)
+   * @tparam T is the expected type (restricted to integer types, e.g. uint32_t, ...)
    * @param jsonData is the json object
    * @param keyName is the key name
    *
    * @return the parsed integer
    */
   template <typename T, class = typename std::enable_if<std::is_integral<T>::value>::type>
-  static T parseInteger(const jsoncons::json& jsonData, const std::string& keyName);
+  static T parseInteger(const nlohmann::json& jsonData, const std::string& keyName);
 };
 
 // Since it is not possible to define template methods in the CPP file, we need to define them here
 
 template <typename T, class>
-T JsonValidator::parseInteger(const jsoncons::json& jsonData, const std::string& keyName)
+T JsonValidator::parseInteger(const nlohmann::json& jsonData, const std::string& keyName)
 {
-  if (!jsonData.at(keyName).is_integer<T>())
+  if (!jsonData.contains(keyName) || !jsonData[keyName].is_number_integer())
   {
     JsonValidator::raiseTypeException<T>(jsonData, keyName);
   }
-  return jsonData.at(keyName).as_integer<T>();
+  return jsonData[keyName].get<T>();
 }
 
 template <typename T>
-void JsonValidator::raiseTypeException(const jsoncons::json& jsonData, const std::string& keyName)
+void JsonValidator::raiseTypeException(const nlohmann::json& jsonData, const std::string& keyName)
 {
   std::stringstream ss;
   ss << "Expected value of " << keyName << " to be of the type " << typeid(T).name() << " but got "
-     << jsonData.at(keyName).type() << " instead.";
+     << jsonData[keyName].type_name() << " instead.";
   throw JSONException(ss.str());
 }
 

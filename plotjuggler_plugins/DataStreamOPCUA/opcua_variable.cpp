@@ -101,12 +101,12 @@ bool OPCUAVariable::isValid() const
   return this->isValid_;
 }
 
-jsoncons::json OPCUAVariable::toJSON() const
+nlohmann::json OPCUAVariable::toJSON() const
 {
-  auto repr = jsoncons::json(jsoncons::json_object_arg);
-  repr.insert_or_assign("name", this->getName());
-  repr.insert_or_assign("namespaceID", this->getNamespaceID());
-  repr.insert_or_assign("nodeID", this->getNodeID());
+  nlohmann::json repr;
+  repr["name"] = this->getName();
+  repr["namespaceID"] = this->getNamespaceID();
+  repr["nodeID"] = this->getNodeID();
 
   return repr;
 }

@@ -141,19 +141,23 @@ void VariableLoader::saveJSON()
   }
 
   // Create new json object
-  jsoncons::json config(jsoncons::json_object_arg);
-
-  config.insert_or_assign("interval", this->update_interval_);
-  config.insert_or_assign("clients", jsoncons::json_object_arg);
+  nlohmann::json config;
+  config["interval"] = this->update_interval_;
+  config["clients"] = nlohmann::json::object();
 
   for (const auto& client : this->clients_)
   {
-    config.at("clients").merge(client->toJSON());
+    config["clients"].merge_patch(client->toJSON());
   }
 
   // Save configuration to file
   std::ofstream file(fileName.toStdString());
-  file << jsoncons::pretty_print(config);
+  if (!file.is_open())
+  {
+    throw JSONException("Failed to open file for writing: " + fileName.toStdString());
+  }
+
+  file << config.dump(4); // Pretty-print JSON with an indentation of 4 spaces
 
   // When everything is done, set unsaved changes to false
   this->unsavedChanges_ = false;
@@ -327,8 +331,7 @@ uint32_t VariableLoader::getNumberOfVariables()
 
 std::pair<OPCUAClientList, uint32_t> VariableLoader::parseConfig(const std::string& configFilePath)
 {
-  jsoncons::json configuration;
-
+  nlohmann::json configuration;
   std::pair<OPCUAClientList, uint32_t> loaderResult;
 
   // If the config file doesn't exist, display an error and exit
@@ -338,16 +341,17 @@ std::pair<OPCUAClientList, uint32_t> VariableLoader::parseConfig(const std::stri
   }
 
   // Parse configuration
-  std::ifstream fs;
-  fs.open(configFilePath, std::fstream::in);
+  std::ifstream fs(configFilePath);
+  if (!fs.is_open())
+  {
+    throw JSONException("Failed to open config file " + configFilePath);
+  }
 
   try
   {
-    auto options = jsoncons::json_options{}
-        .err_handler(jsoncons::strict_json_parsing());
-    configuration = jsoncons::json::parse(fs, options);
+    fs >> configuration;
   }
-  catch (const jsoncons::ser_error& e)
+  catch (const nlohmann::json::parse_error& e)
   {
     throw JSONException("Error while parsing " + configFilePath + ":\n" + e.what());
   }
@@ -373,22 +377,20 @@ std::pair<OPCUAClientList, uint32_t> VariableLoader::parseConfig(const std::stri
   }
 
   // Validate clients
-  if (!configuration.at("clients").is_object())
+  if (!configuration["clients"].is_object())
   {
     throw JSONException("Client data in the configuration is invalid");
   }
 
   // Iterate over clients and create instances if they are valid
-  for (const auto& client : configuration.at("clients").object_range())
+  for (auto& [clientAddress, clientData] : configuration["clients"].items())
   {
-    const std::string& clientAddress = client.key();
-    const jsoncons::json& clientData = client.value();
     try
     {
       auto newClient = std::make_unique<OPCUAClient>(clientAddress, clientData);
       VariableLoader::addClient(loaderResult.first, newClient);
     }
-    catch (std::exception& e)
+    catch (const std::exception& e)
     {
       VariableLoader::showMessagePopup("error", e.what());
     }

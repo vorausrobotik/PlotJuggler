@@ -18,8 +18,7 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 #include <QDialogButtonBox>
-#include <jsoncons/json.hpp>
-#include <jsoncons/json_error.hpp>
+#include <nlohmann/json.hpp>
 #include "dialog_elements.h"
 #include "opcua_variable.h"
 #include "opcua_client.h"
