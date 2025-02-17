@@ -95,11 +95,11 @@ void DataStreamOPCUA::pushSingleCycle()
     this->failed_cycles_ = 0;
 
     using namespace std::chrono;
-    static std::chrono::high_resolution_clock::time_point initial_time = high_resolution_clock::now();
+    static auto initial_time = high_resolution_clock::now();
     const double offset = duration_cast<duration<double>>(initial_time.time_since_epoch()).count();
-
+  
     auto now = high_resolution_clock::now();
-    const double t = duration_cast<duration<double>>(now - initial_time).count();
+    const double stamp = duration_cast<duration<double>>(now - initial_time).count() + offset;
 
     // Iterate over all results
     for (size_t i = 0; i < response.resultsSize; i++)
@@ -155,7 +155,7 @@ void DataStreamOPCUA::pushSingleCycle()
               break;
             }
           }
-          plot.pushBack(PJ::PlotData::Point(t + offset, value));
+          plot.pushBack(PJ::PlotData::Point(stamp, value));
         }
         else
         {
@@ -164,61 +164,61 @@ void DataStreamOPCUA::pushSingleCycle()
             case UA_NS0ID_FLOAT: {
               auto value = (UA_Float*)response.results[i].value.data;
               std::vector<UA_Float> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_DOUBLE: {
               auto value = (UA_Double*)response.results[i].value.data;
               std::vector<UA_Double> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_INT16: {
               auto value = (UA_Int16*)response.results[i].value.data;
               std::vector<UA_Int16> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_INT32: {
               auto value = (UA_Int32*)response.results[i].value.data;
               std::vector<UA_Int32> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_INT64: {
               auto value = (UA_Int64*)response.results[i].value.data;
               std::vector<UA_Int64> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_BYTE: {
               auto value = (UA_Byte*)response.results[i].value.data;
               std::vector<UA_Byte> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_UINT16: {
               auto value = (UA_UInt16*)response.results[i].value.data;
               std::vector<UA_UInt16> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_UINT32: {
               auto value = (UA_UInt32*)response.results[i].value.data;
               std::vector<UA_UInt32> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_UINT64: {
               auto value = (UA_UInt64*)response.results[i].value.data;
               std::vector<UA_UInt64> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
             case UA_NS0ID_BOOLEAN: {
               auto value = (UA_Boolean*)response.results[i].value.data;
               std::vector<UA_Boolean> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, t + offset);
+              this->append_vector(variables[i]->getName(), vec, stamp);
               break;
             }
           }
@@ -259,13 +259,13 @@ void DataStreamOPCUA::loop()
 }
 
 template <typename T>
-void DataStreamOPCUA::append_vector(const std::string& name, std::vector<T> vec, double x)
+void DataStreamOPCUA::append_vector(const std::string& name, std::vector<T> vec, double stamp)
 {
   for (size_t j = 0; j < vec.size(); j++)
   {
     auto& plot = dataMap().numeric.at(name + "/" + std::to_string(j));
-
-    plot.pushBack(PJ::PlotData::Point(x, vec[j]));
+    
+    plot.pushBack(PJ::PlotData::Point(stamp, vec[j]));
   }
 }
 

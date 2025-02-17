@@ -105,11 +105,11 @@ private:
    */
   void pushSingleCycle();
 
-  template <typename T>
   /**
    * Appends a vector with a generic type to the plot
    */
-  void append_vector(const std::string& name, std::vector<T> vec, double x);
+  template <typename T>
+  void append_vector(const std::string& name, std::vector<T> vec, double stamp);
 };
 
 #endif  // PLOTJUGGLER_PLUGINS_DATASTREAMOPCUA_H
