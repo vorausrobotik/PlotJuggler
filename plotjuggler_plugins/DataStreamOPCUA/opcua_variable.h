@@ -10,10 +10,27 @@
 #include <nlohmann/json.hpp>
 #include "PlotJuggler/plotdata.h"
 
+class OPCUAVariableException : public std::exception
+{
+private:
+  std::string message_;
+
+public:
+  explicit OPCUAVariableException(const std::string& message)
+  {
+    this->message_ = message;
+  }
+  const char* what() const noexcept override
+  {
+    return message_.c_str();
+  }
+};
+
 class OPCUAVariable
 {
 private:
   std::string name_;
+  std::string nodeIdStr_;
 
   UA_NodeId nodeID_{};
 
@@ -29,11 +46,12 @@ public:
    * OPCUAVariable constructor
    *
    * @param name is the name of the opcua variable
-   * @param namespaceID is the ID of the namespace
-   * @param nodeID is the ID of the node
+   * @param nodeId is the ID of the node
    * @param ua_variable is the response from the server on the first validation request
    */
-  OPCUAVariable(std::string name, uint32_t namespaceID, uint32_t nodeID, UA_Variant& ua_variable);
+  OPCUAVariable(const std::string &name, const std::string &nodeId);
+  
+  ~OPCUAVariable();
 
   /**
    * @return the name of this OPCUAVariable
@@ -53,14 +71,9 @@ public:
   std::string getDescription(UA_Client* client) const;
 
   /**
-   * @return the namespace ID of this OPCUAVariable
-   */
-  uint32_t getNamespaceID() const;
-
-  /**
    * @return the node ID of this OPCUAVariable
    */
-  uint32_t getNodeID() const;
+   std::string getNodeID() const;
 
   /**
    * @return the type of this OPCUAVariable
@@ -76,6 +89,7 @@ public:
    * @return the internal readValueID for the OPCUA request
    */
   UA_ReadValueId& getReadValueID();
+  
   /**
    * @return whether this OPCUAVariable is an array
    */

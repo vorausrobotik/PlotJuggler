@@ -60,12 +60,11 @@ public:
    * Adds an opcua variable to the internal list of tracked variables
    *
    * @param name is the name of the new variable
-   * @param namespaceID is the ID of the OPCUA namespace
    * @param nodeID is the ID of the OPCUA node
    *
    * @throw OPCUAClientException if something went wrong
    */
-  void addVariable(const std::string& name, uint32_t namespaceID, uint32_t nodeID);
+  void addVariable(const std::string& name, const std::string& nodeID);
 
   /**
    * Adds an opcua variable to the internal list of tracked variables

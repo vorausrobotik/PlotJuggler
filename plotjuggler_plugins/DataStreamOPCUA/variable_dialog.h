@@ -59,7 +59,7 @@ private:
   const uint64_t DEFAULT_INTERVAL_ = 50;
 
   // Header for the variable table
-  const QStringList tableHeader_ = { "Server", "Name", "Namespace", "ID", "Description", "Type", "Status" };
+  const QStringList tableHeader_ = { "Server", "Name", "ID", "Description", "Type", "Status" };
 
   // Vector for opcua clients
   OPCUAClientList clients_;
@@ -75,8 +75,7 @@ private:
   FormStringElement* serverFormElement{};
   FormStringElement* variableNameFormElement{};
 
-  FormNumberElement* namespaceIDFormElement{};
-  FormNumberElement* nodeIDFormElement{};
+  FormStringElement* nodeIDFormElement{};
 
   FormButtonElement* addButtonFormElement{};
   FormButtonElement* clearButtonFormElement{};

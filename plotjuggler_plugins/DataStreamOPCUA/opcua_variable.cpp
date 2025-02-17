@@ -1,14 +1,15 @@
 #include "opcua_variable.h"
 
-OPCUAVariable::OPCUAVariable(std::string name, uint32_t namespaceID, uint32_t nodeID, UA_Variant& ua_variable)
-{
-  this->name_ = std::move(name);
-  this->nodeID_ = UA_NODEID_NUMERIC(namespaceID, nodeID);
-  this->variableType_ = *(ua_variable.type);
-  this->arrayLength_ = ua_variable.arrayLength;
-  this->isArray_ = !UA_Variant_isScalar(&ua_variable);
-  this->readValueID_ = UA_ReadValueId{this->nodeID_, UA_ATTRIBUTEID_VALUE };
+OPCUAVariable::OPCUAVariable(const std::string &name, const std::string &nodeId) {
+  this->name_ = name;
+  this->nodeIdStr_ = nodeId;
+
+  UA_NodeId_parse(&this->nodeID_, UA_STRING(nodeIdStr_.data()));
   this->isValid_ = false;
+}
+
+OPCUAVariable::~OPCUAVariable() {
+  UA_NodeId_clear(&this->nodeID_);
 }
 
 std::string OPCUAVariable::getName() const
@@ -16,14 +17,9 @@ std::string OPCUAVariable::getName() const
   return this->name_;
 }
 
-uint32_t OPCUAVariable::getNamespaceID() const
+std::string OPCUAVariable::getNodeID() const
 {
-  return this->nodeID_.namespaceIndex;
-}
-
-uint32_t OPCUAVariable::getNodeID() const
-{
-  return this->nodeID_.identifier.numeric;
+  return this->nodeIdStr_;
 }
 
 uint32_t OPCUAVariable::getType() const
@@ -59,8 +55,7 @@ void OPCUAVariable::registerToDataMap(PJ::PlotDataMapRef& map) const
 
 bool OPCUAVariable::operator==(const OPCUAVariable& other) const
 {
-  return this->getName() == other.getName() && this->getNamespaceID() == other.getNamespaceID() &&
-         this->getNodeID() == other.getNodeID();
+  return this->getName() == other.getName() && this->getNodeID() == other.getNodeID();
 }
 
 bool OPCUAVariable::operator!=(const OPCUAVariable& other) const
@@ -70,7 +65,7 @@ bool OPCUAVariable::operator!=(const OPCUAVariable& other) const
 
 std::ostream& operator<<(std::ostream& stream, const OPCUAVariable& var)
 {
-  stream << "<OPCUAVariable | " << var.getName() << " |" << var.getNamespaceID() << ":" << var.getNodeID();
+  stream << "<OPCUAVariable | " << var.getName() << " | " << var.getNodeID();
   return stream;
 }
 
@@ -82,15 +77,22 @@ void OPCUAVariable::validate(UA_Client* client)
   UA_StatusCode status_code = UA_Client_readValueAttribute(client, this->nodeID_, &output);
 
   // If the request is successful, the variable might be valid
-  if (status_code == UA_STATUSCODE_GOOD)
-  {
-    this->isValid_ = true;
+  if (status_code != UA_STATUSCODE_GOOD) {
+    UA_Variant_clear(&output);
+    throw OPCUAVariableException("Variable doesn't exist");
   }
 
   // If the variable isn't numeric, it is invalid bc. other types (e.g. strings) aren't supported yet
   if (!UA_DataType_isNumeric(output.type)) {
-    this->isValid_ = false;
+    UA_Variant_clear(&output);
+    throw OPCUAVariableException("Variable is not numeric");
   }
+  
+  this->variableType_ = *(output.type);
+  this->arrayLength_ = output.arrayLength;
+  this->isArray_ = !UA_Variant_isScalar(&output);
+  this->readValueID_ = UA_ReadValueId{this->nodeID_, UA_ATTRIBUTEID_VALUE };
+  this->isValid_ = true;
 
   // Clear the output
   UA_Variant_clear(&output);
@@ -105,7 +107,6 @@ nlohmann::json OPCUAVariable::toJSON() const
 {
   nlohmann::json repr;
   repr["name"] = this->getName();
-  repr["namespaceID"] = this->getNamespaceID();
   repr["nodeID"] = this->getNodeID();
 
   return repr;

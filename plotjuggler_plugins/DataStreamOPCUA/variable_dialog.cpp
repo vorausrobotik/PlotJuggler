@@ -33,10 +33,9 @@ void VariableLoader::initLayout_()
   this->intervalFormElement->onChange(this, SLOT(updateInterval()));
 
   // Input fields
-  this->serverFormElement = new FormStringElement("Server address", "opc.tcp://IP_ADDRESS:PORT");
+  this->serverFormElement = new FormStringElement("Server address", "opc.tcp://<hostname>:<port>");
   this->variableNameFormElement = new FormStringElement("Variable Name", "Name of the variable");
-  this->namespaceIDFormElement = new FormNumberElement("Namespace ID [numeric]", 1);
-  this->nodeIDFormElement = new FormNumberElement("Node ID [numeric]", 1);
+  this->nodeIDFormElement = new FormStringElement("Node ID", "ns=<nsindex>;<type>=<value>");
 
   // Add variable button
   this->addButtonFormElement = new FormButtonElement("Add");
@@ -92,7 +91,6 @@ void VariableLoader::initLayout_()
   auto* inputLayout = new QHBoxLayout;
   this->serverFormElement->addToLayout(inputLayout);
   this->variableNameFormElement->addToLayout(inputLayout);
-  this->namespaceIDFormElement->addToLayout(inputLayout);
   this->nodeIDFormElement->addToLayout(inputLayout);
   this->addButtonFormElement->addToLayout(inputLayout);
   this->clearButtonFormElement->addToLayout(inputLayout);
@@ -225,7 +223,6 @@ void VariableLoader::clearInput()
   this->intervalFormElement->clear();
   this->serverFormElement->clear();
   this->variableNameFormElement->clear();
-  this->namespaceIDFormElement->clear();
   this->nodeIDFormElement->clear();
 }
 
@@ -234,8 +231,7 @@ void VariableLoader::addVariable()
   // Get variable data from the input fields
   QString serverAddress = this->serverFormElement->getValue();
   QString variableName = this->variableNameFormElement->getValue();
-  uint32_t variableNamespaceID = this->namespaceIDFormElement->getValue();
-  uint32_t variableNodeID = this->nodeIDFormElement->getValue();
+  QString variableNodeID = this->nodeIDFormElement->getValue();
 
   try
   {
@@ -243,7 +239,7 @@ void VariableLoader::addVariable()
     auto& client = VariableLoader::getOrInsertNewClient(this->clients_, serverAddress.toStdString());
 
     // Try to add new variable. If it fails, show the error.
-    client.addVariable(variableName.toStdString(), variableNamespaceID, variableNodeID);
+    client.addVariable(variableName.toStdString(), variableNodeID.toStdString());
   }
   catch (OPCUAClientException& e)
   {

@@ -69,37 +69,25 @@ void OPCUAClient::disconnect()
 void OPCUAClient::addVariable(const nlohmann::json& variableData)
 {
   // Validate json body keys
-  JsonValidator::expectKeys(variableData, { "name", "namespaceID", "nodeID" });
+  JsonValidator::expectKeys(variableData, { "name", "nodeID" });
 
   // Parse variables
   std::string variableName = JsonValidator::parseString(variableData, "name");
-  auto namespaceID = JsonValidator::parseInteger<uint32_t>(variableData, "namespaceID");
-  auto nodeID = JsonValidator::parseInteger<uint32_t>(variableData, "nodeID");
+  auto nodeID = JsonValidator::parseString(variableData, "nodeID");
 
   // Create new variable
-  return this->addVariable(variableName, namespaceID, nodeID);
+  return this->addVariable(variableName, nodeID);
 }
 
-void OPCUAClient::addVariable(const std::string& name, uint32_t namespaceID, uint32_t nodeID)
+void OPCUAClient::addVariable(const std::string& name, const std::string& nodeID)
 {
   // Check inputs
   if (name.empty())
   {
     throw OPCUAClientException("The variable name cannot be empty");
   }
-  UA_Variant output;
-  auto retRead = UA_Client_readValueAttribute(client_, UA_NODEID_NUMERIC(namespaceID, nodeID), &output);
 
-  // Check return status
-  if (retRead != UA_STATUSCODE_GOOD)
-  {
-    throw OPCUAClientException("Variable doesn't exist");
-  }
-
-  auto newVar = std::make_shared<OPCUAVariable>(name, namespaceID, nodeID, output);
-
-  // Clear output
-  UA_Variant_clear(&output);
+  auto newVar = std::make_shared<OPCUAVariable>(name, nodeID);
 
   // Check if variable already exists
   if (this->hasVariable(newVar))
@@ -177,8 +165,7 @@ void OPCUAClient::addVariablesToTable(QTableWidget& tableWidget)
     std::vector<QTableWidgetItem*> items = {
       new QTableWidgetItem(QString::fromStdString(this->getAddress())),
       new QTableWidgetItem(QString::fromStdString(variable->getName())),
-      new QTableWidgetItem(QString::number(variable->getNamespaceID())),
-      new QTableWidgetItem(QString::number(variable->getNodeID())),
+      new QTableWidgetItem(QString::fromStdString(variable->getNodeID())),
       new QTableWidgetItem(QString::fromStdString(variable->getDescription(this->client_))),
       new QTableWidgetItem(QString::fromStdString(variable->getTypeAsString())),
       new QTableWidgetItem(variable->isValid() ? "VALID" : "INVALID"),
