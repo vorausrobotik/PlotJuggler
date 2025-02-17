@@ -6,18 +6,6 @@ is a free implementation of the OPC UA protocol.
 ## External dependencies
 
  - [open62541](https://github.com/open62541/open62541)
- - [jsoncons](https://github.com/danielaparker/jsoncons)
-
-## How to build (cmake)
-
-```shell script
-git clone https://github.com/facontidavide/PlotJuggler.git
-cd PlotJuggler
-git submodule update --init --recursive
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DWITH_OPCUA=ON ..
-```
 
 ## How to use
 
@@ -32,3 +20,4 @@ cmake -DCMAKE_BUILD_TYPE=Release -DWITH_OPCUA=ON ..
 
 - Only numeric values (and arrays) are are supported at the moment
 - Update interval can't be defined per-value
+- [Read Service](https://reference.opcfoundation.org/Core/Part4/v104/docs/5.10.2) is used instead of [Subscriptions](https://reference.opcfoundation.org/Core/Part4/v104/docs/5.12)
