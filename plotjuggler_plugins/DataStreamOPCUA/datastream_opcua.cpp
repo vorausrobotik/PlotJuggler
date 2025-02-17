@@ -237,6 +237,7 @@ void DataStreamOPCUA::loop()
   {
     // Do a new plot iteration
     pushSingleCycle();
+    emit dataReceived();
 
     // Sleep for the interval milliseconds
     std::this_thread::sleep_for(std::chrono::milliseconds(this->interval_));
