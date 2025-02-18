@@ -104,12 +104,10 @@ private:
    * Fetches a single cycle from the OPCUA Servers and plots it
    */
   void pushSingleCycle();
-
-  /**
-   * Appends a vector with a generic type to the plot
-   */
-  template <typename T>
-  void append_vector(const std::string& name, std::vector<T> vec, double stamp);
 };
+
+double UA_Variant_to_numeric_scalar(const UA_Variant &ua_variant);
+
+std::vector<double> UA_Variant_to_numeric_vector(const UA_Variant &ua_variant);
 
 #endif  // PLOTJUGGLER_PLUGINS_DATASTREAMOPCUA_H

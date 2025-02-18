@@ -105,122 +105,31 @@ void DataStreamOPCUA::pushSingleCycle()
     for (size_t i = 0; i < response.resultsSize; i++)
     {
       // Partial result has been successful
-      if (response.results[i].status == UA_STATUSCODE_GOOD)
+      const auto &ua_data_value = response.results[i];
+      if (ua_data_value.status == UA_STATUSCODE_GOOD && ua_data_value.hasValue)
       {
-        if (UA_Variant_isScalar(&response.results[i].value))
+        const auto& ua_variant = ua_data_value.value;
+
+        if (UA_Variant_isEmpty(&ua_variant)) {
+          qDebug() << "UA_Variant is empty in DataStreamOPCUA";
+          continue;
+        }
+
+        if (UA_Variant_isScalar(&ua_variant))
         {
-          void* rawData = response.results[i].value.data;
+          double numeric_scalar = UA_Variant_to_numeric_scalar(ua_variant);
+
           auto& plot = dataMap().numeric.at(variables[i]->getName());
-          double value;
-          switch (variables[i]->getType())
-          {
-            case UA_NS0ID_FLOAT: {
-              value = *(UA_Float*)rawData;
-              break;
-            }
-            case UA_NS0ID_DOUBLE: {
-              value = *(UA_Double*)rawData;
-              break;
-            }
-            case UA_NS0ID_INT16: {
-              value = *(UA_Int16*)rawData;
-              break;
-            }
-            case UA_NS0ID_INT32: {
-              value = *(UA_Int32*)rawData;
-              break;
-            }
-            case UA_NS0ID_INT64: {
-              value = *(UA_Int64*)rawData;
-              break;
-            }
-            case UA_NS0ID_BYTE: {
-              value = *(UA_Byte*)rawData;
-              break;
-            }
-            case UA_NS0ID_UINT16: {
-              value = *(UA_UInt16*)rawData;
-              break;
-            }
-            case UA_NS0ID_UINT32: {
-              value = *(UA_UInt32*)rawData;
-              break;
-            }
-            case UA_NS0ID_UINT64: {
-              value = *(UA_UInt64*)rawData;
-              break;
-            }
-            case UA_NS0ID_BOOLEAN: {
-              value = *(UA_Boolean*)rawData;
-              break;
-            }
-          }
-          plot.pushBack(PJ::PlotData::Point(stamp, value));
+          plot.pushBack(PJ::PlotData::Point(stamp, numeric_scalar));
         }
         else
         {
-          switch (variables[i]->getType())
+          std::vector<double> numeric_vector = UA_Variant_to_numeric_vector(ua_variant);
+
+          for (size_t j = 0; j < numeric_vector.size(); j++)
           {
-            case UA_NS0ID_FLOAT: {
-              auto value = (UA_Float*)response.results[i].value.data;
-              std::vector<UA_Float> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_DOUBLE: {
-              auto value = (UA_Double*)response.results[i].value.data;
-              std::vector<UA_Double> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_INT16: {
-              auto value = (UA_Int16*)response.results[i].value.data;
-              std::vector<UA_Int16> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_INT32: {
-              auto value = (UA_Int32*)response.results[i].value.data;
-              std::vector<UA_Int32> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_INT64: {
-              auto value = (UA_Int64*)response.results[i].value.data;
-              std::vector<UA_Int64> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_BYTE: {
-              auto value = (UA_Byte*)response.results[i].value.data;
-              std::vector<UA_Byte> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_UINT16: {
-              auto value = (UA_UInt16*)response.results[i].value.data;
-              std::vector<UA_UInt16> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_UINT32: {
-              auto value = (UA_UInt32*)response.results[i].value.data;
-              std::vector<UA_UInt32> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_UINT64: {
-              auto value = (UA_UInt64*)response.results[i].value.data;
-              std::vector<UA_UInt64> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
-            case UA_NS0ID_BOOLEAN: {
-              auto value = (UA_Boolean*)response.results[i].value.data;
-              std::vector<UA_Boolean> vec(value, value + response.results[i].value.arrayLength);
-              this->append_vector(variables[i]->getName(), vec, stamp);
-              break;
-            }
+            auto& plot = dataMap().numeric.at(variables[i]->getName() + "/" + std::to_string(j));
+            plot.pushBack(PJ::PlotData::Point(stamp, numeric_vector[j]));
           }
         }
       }
@@ -258,17 +167,6 @@ void DataStreamOPCUA::loop()
   this->cleanUp_();
 }
 
-template <typename T>
-void DataStreamOPCUA::append_vector(const std::string& name, std::vector<T> vec, double stamp)
-{
-  for (size_t j = 0; j < vec.size(); j++)
-  {
-    auto& plot = dataMap().numeric.at(name + "/" + std::to_string(j));
-    
-    plot.pushBack(PJ::PlotData::Point(stamp, vec[j]));
-  }
-}
-
 void DataStreamOPCUA::cleanUp_()
 {
   // Disconnect all clients
@@ -302,4 +200,101 @@ void DataStreamOPCUA::showMessagePopup(const QString& type, const QString& messa
   msgBox.setText(message);
   msgBox.setMinimumWidth(400);
   msgBox.exec();
+}
+
+double UA_Variant_to_numeric_scalar(const UA_Variant &ua_variant) {
+  double value{};
+
+  switch (ua_variant.type->typeId.identifier.numeric)
+  {
+    case UA_NS0ID_FLOAT: {
+      value = *(UA_Float*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_DOUBLE: {
+      value = *(UA_Double*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_INT16: {
+      value = *(UA_Int16*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_INT32: {
+      value = *(UA_Int32*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_INT64: {
+      value = *(UA_Int64*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_BYTE: {
+      value = *(UA_Byte*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_UINT16: {
+      value = *(UA_UInt16*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_UINT32: {
+      value = *(UA_UInt32*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_UINT64: {
+      value = *(UA_UInt64*)ua_variant.data;
+      break;
+    }
+    case UA_NS0ID_BOOLEAN: {
+      value = *(UA_Boolean*)ua_variant.data;
+      break;
+    }
+  }
+  return value;
+}
+
+template<typename T>
+std::vector<double> cast_numeric_array(void *data, size_t length){
+  auto value = static_cast<T*>(data);
+  std::vector<T> casted_vector(value, value + length);
+  std::vector<double> numeric_vector(casted_vector.begin(), casted_vector.end());
+  return numeric_vector;
+}
+
+std::vector<double> UA_Variant_to_numeric_vector(const UA_Variant &ua_variant) {
+  std::vector<double> numeric_vector{};
+
+  switch (ua_variant.type->typeId.identifier.numeric)
+  {
+    case UA_NS0ID_FLOAT: 
+      numeric_vector = cast_numeric_array<UA_Float>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_DOUBLE: 
+      numeric_vector = cast_numeric_array<UA_Double>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_INT16: 
+      numeric_vector = cast_numeric_array<UA_Int16>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_INT32: 
+      numeric_vector = cast_numeric_array<UA_Int32>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_INT64: 
+      numeric_vector = cast_numeric_array<UA_Int64>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_BYTE: 
+      numeric_vector = cast_numeric_array<UA_Byte>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_UINT16: 
+      numeric_vector = cast_numeric_array<UA_UInt16>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_UINT32: 
+      numeric_vector = cast_numeric_array<UA_UInt32>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_UINT64: 
+      numeric_vector = cast_numeric_array<UA_UInt64>(ua_variant.data, ua_variant.arrayLength);
+      break;
+    case UA_NS0ID_BOOLEAN: 
+      numeric_vector = cast_numeric_array<UA_Boolean>(ua_variant.data, ua_variant.arrayLength);
+      break;
+  }
+
+  return numeric_vector;
 }
