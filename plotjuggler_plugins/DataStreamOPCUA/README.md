@@ -5,7 +5,8 @@ is a free implementation of the OPC UA protocol.
 
 ## External dependencies
 
- - [open62541](https://github.com/open62541/open62541)
+ - Open62541 must be installed. It can be cloned form its repo [open62541](https://github.com/open62541/open62541). Instructions for manual installation can be found on [Installing open62541](https://open62541.org/doc/1.1/installing.html). After installation, it is recommended to update the links cache to shared libraries using `sudo ldconfig`.
+ 
 
 ## How to use
 
